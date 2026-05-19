@@ -16,7 +16,7 @@ if (!SUPPORTED.includes(target)) {
   process.exit(1);
 }
 
-const url = `https://github.com/zerolang/zero-config/releases/download/v${VERSION}/zero-config-${target}`;
+const url = `https://github.com/armarshamas/zero-config/releases/download/v${VERSION}/zero-config-${target}`;
 const binDir = path.join(__dirname, 'bin');
 const dest = path.join(binDir, `zero-config-${target}`);
 

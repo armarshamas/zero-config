@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Typed, validated, agent-readable environment configuration for Zero applications",
   "author": "zero-config authors",
-  "repository": "https://github.com/zerolang/zero-config",
+  "repository": "https://github.com/armarshamas/zero-config",
   "license": "MIT",
   "keywords": ["config", "env", "environment", "configuration", "validation"],
   "capabilities": ["env"],
