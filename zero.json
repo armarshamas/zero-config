@@ -1,0 +1,8 @@
+{
+  "package": { "name": "zero-config", "version": "1.0.0" },
+  "targets": {
+    "cli": { "kind": "exe", "main": "src/main.0" },
+    "lib": { "kind": "lib", "main": "src/lib.0" }
+  },
+  "dependencies": {}
+}

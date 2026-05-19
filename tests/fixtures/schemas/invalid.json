@@ -1,0 +1,16 @@
+{
+  "name": "invalid-schema",
+  "version": "1.0.0",
+  "variables": [
+    {
+      "name": "INVALID_NAME!",
+      "type": "not_a_type",
+      "required": "yes",
+      "description": "",
+      "example": "",
+      "default": null,
+      "deprecated": false,
+      "tags": []
+    }
+  ]
+}

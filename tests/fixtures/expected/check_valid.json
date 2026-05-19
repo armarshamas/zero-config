@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "timestamp": "2026-05-22T14:30:00Z",
+  "schema_name": "full-test-app",
+  "version": "1.0.0",
+  "summary": {
+    "total": 10,
+    "valid": 10,
+    "errors": 0,
+    "warnings": 0
+  },
+  "diagnostics": []
+}

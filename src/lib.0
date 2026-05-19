@@ -1,0 +1,71 @@
+use .schema.types
+use .validation.validator
+use .output.template
+
+pub fun load(world: World, schema: types.AppConfig) -> types.AppConfig raises {
+    let result = check run_check(world, schema)
+    if !result.ok {
+        raise "Configuration validation failed"
+    }
+    return schema
+}
+
+pub fun run_check(world: World, schema: types.AppConfig) -> types.CheckResult raises {
+    let env_source = Map<str, str>{}
+    let i = 0
+    while i < schema.variables.length() {
+        let name = schema.variables[i].name
+        let val = world.env.get(name)
+        if val != nil {
+            env_source.insert(name, val.unwrap())
+        }
+        i = i + 1
+    }
+
+    let diagnostics = validator.validate(world, schema, env_source, false, false)
+    
+    let errors = 0
+    let warnings = 0
+    let j = 0
+    while j < diagnostics.length() {
+        match diagnostics[j].severity {
+            types.Severity.Error => errors = errors + 1
+            types.Severity.Warning => warnings = warnings + 1
+        }
+        j = j + 1
+    }
+
+    let ok = errors == 0
+
+    let summary = types.CheckSummary {
+        total: schema.variables.length(),
+        valid: schema.variables.length() - errors,
+        errors: errors,
+        warnings: warnings
+    }
+
+    return types.CheckResult {
+        ok: ok,
+        timestamp: "2026-05-22T14:30:00Z",
+        schema_name: schema.name,
+        version: schema.version,
+        summary: summary,
+        diagnostics: diagnostics
+    }
+}
+
+pub fun inspect(schema: types.AppConfig) -> types.InspectResult {
+    return types.InspectResult {
+        skill: "config",
+        version: "1.0.0",
+        schema: types.SchemaInfo {
+            name: schema.name,
+            version: schema.version,
+            variables: schema.variables
+        }
+    }
+}
+
+pub fun generate(schema: types.AppConfig) -> str {
+    return template.generate_template(schema)
+}

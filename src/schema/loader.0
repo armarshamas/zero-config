@@ -1,0 +1,107 @@
+use std.json
+use .types
+
+pub fun load_from_json(world: World, path: str) -> AppConfig raises {
+    let content = match world.fs.read(path) {
+        ok val => val
+        err _ => raise "CFG000: No schema found in " + path
+    }
+    let config: AppConfig = match json.decode(content) {
+        ok val => val
+        err msg => raise "CFG006: Schema file is not valid: " + msg
+    }
+    
+    // Validate schema constraints
+    check validate_schema(config)
+    
+    return config
+}
+
+pub fun load_from_zero(world: World, path: str) -> AppConfig raises {
+    raise "CFG000: Zero native format (.0) parsing not yet implemented. Use zero-config.json format for now."
+}
+
+pub fun discover_and_load(world: World, manual_path: str?) -> AppConfig raises {
+    if manual_path != nil {
+        let path = manual_path.unwrap()
+        if path.ends_with(".0") {
+            return check load_from_zero(world, path)
+        } else {
+            return check load_from_json(world, path)
+        }
+    }
+
+    // Search paths per §9.3
+    let paths = [
+        "zero-config.json",
+        "config/zero-config.json"
+    ]
+
+    let i = 0
+    while i < paths.length() {
+        let path = paths[i]
+        let res = world.fs.read(path)
+        if res.is_ok() {
+            return check load_from_json(world, path)
+        }
+        i = i + 1
+    }
+
+    raise "CFG000: No schema found in " + world.cwd()
+}
+
+fun validate_schema(schema: AppConfig) -> Void raises {
+    let seen_names = Map<str, bool>{}
+    let i = 0
+    while i < schema.variables.length() {
+        let v = schema.variables[i]
+        
+        // CFG007: Duplicate variable name
+        if seen_names.get(v.name) != nil {
+            raise "CFG007: Variable " + v.name + " is declared more than once"
+        }
+        seen_names.insert(v.name, true)
+        
+        // CFG008: Invalid variable name
+        if !is_valid_variable_name(v.name) {
+            raise "CFG008: " + v.name + " is not a valid variable name (must match [A-Z][A-Z0-9_]*)"
+        }
+        
+        // CFG009: Empty required field
+        if v.description == "" {
+            raise "CFG009: ConfigVar.description must not be empty"
+        }
+        if v.example == "" {
+            raise "CFG009: ConfigVar.example must not be empty"
+        }
+        
+        // CFG010: Both deprecated and required
+        if v.deprecated && v.required {
+            raise "CFG010: " + v.name + " cannot be both required and deprecated"
+        }
+        
+        i = i + 1
+    }
+}
+
+fun is_valid_variable_name(name: str) -> bool {
+  if name.length() == 0 {
+    return false
+  }
+
+  let first = name[0]
+  if first < 'A' || first > 'Z' {
+    return false
+  }
+
+  let i = 1
+  while i < name.length() {
+    let c = name[i]
+    if !((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
+      return false
+    }
+    i = i + 1
+  }
+
+  return true
+}

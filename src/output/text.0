@@ -1,0 +1,61 @@
+// src/output/text.0
+use ..schema.types
+
+pub fun check_result_to_text(result: CheckResult) -> str {
+    let out = ""
+    if result.ok {
+        out = "✓ zero-config check — " + result.schema_name + " v" + result.version + "\n"
+    } else {
+        out = "✗ zero-config check — " + result.schema_name + " v" + result.version + "\n"
+    }
+    
+    out = out + "  " + result.summary.total.to_str() + " variables · " + 
+          result.summary.valid.to_str() + " valid · " + 
+          result.summary.errors.to_str() + " errors · " + 
+          result.summary.warnings.to_str() + " warnings\n"
+          
+    if result.diagnostics.length() > 0 {
+        out = out + "\n"
+        let i = 0
+        while i < result.diagnostics.length() {
+            let d = result.diagnostics[i]
+            out = out + "  [" + d.code + "] " + d.variable + " — "
+            
+            if d.code == "CFG001" {
+                out = out + "required but not set\n"
+            } else if d.code == "CFG002" {
+                out = out + "invalid type\n"
+            } else if d.code == "CFG004" {
+                out = out + "deprecated and should be removed\n"
+            } else if d.code == "CFG005" {
+                out = out + "set but not declared in the schema\n"
+            } else {
+                out = out + d.message + "\n"
+            }
+            
+            if d.value != nil {
+                out = out + "           Value: " + d.value.unwrap() + "\n"
+            }
+            
+            out = out + "           Type: " + d.repair.type + "\n"
+            
+            if d.repair.example != nil {
+                out = out + "           Example: " + d.repair.example.unwrap() + "\n"
+            }
+            
+            // Fix hint
+            if d.code == "CFG001" {
+                out = out + "           Fix: set " + d.variable + " in your environment\n"
+            } else if d.code == "CFG002" {
+                out = out + "           Fix: set " + d.variable + " to a valid " + d.repair.type + "\n"
+            } else if d.code == "CFG004" {
+                out = out + "           Fix: remove " + d.variable + " from your environment\n"
+            }
+            
+            out = out + "\n"
+            i = i + 1
+        }
+    }
+    
+    return out
+}

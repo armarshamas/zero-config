@@ -1,0 +1,126 @@
+{
+  "ok": false,
+  "timestamp": "2026-05-22T14:30:00Z",
+  "schema_name": "full-test-app",
+  "version": "1.0.0",
+  "summary": {
+    "total": 10,
+    "valid": 2,
+    "errors": 8,
+    "warnings": 0
+  },
+  "diagnostics": [
+    {
+      "code": "CFG002",
+      "severity": "error",
+      "variable": "URL_VAR",
+      "value": "not-a-url",
+      "message": "URL_VAR must be a valid url, got: not-a-url",
+      "repair": {
+        "id": "fix-invalid-type",
+        "variable": "URL_VAR",
+        "type": "url",
+        "example": "https://api.example.com",
+        "constraint": null
+      }
+    },
+    {
+      "code": "CFG002",
+      "severity": "error",
+      "variable": "PORT_VAR",
+      "value": "99999",
+      "message": "PORT_VAR must be a valid port, got: 99999",
+      "repair": {
+        "id": "fix-invalid-type",
+        "variable": "PORT_VAR",
+        "type": "port",
+        "example": "3000",
+        "constraint": "1 ≤ value ≤ 65535"
+      }
+    },
+    {
+      "code": "CFG002",
+      "severity": "error",
+      "variable": "BOOL_VAR",
+      "value": "maybe",
+      "message": "BOOL_VAR must be a valid bool, got: maybe",
+      "repair": {
+        "id": "fix-invalid-type",
+        "variable": "BOOL_VAR",
+        "type": "bool",
+        "example": "true",
+        "constraint": null
+      }
+    },
+    {
+      "code": "CFG002",
+      "severity": "error",
+      "variable": "INT_VAR",
+      "value": "not-an-int",
+      "message": "INT_VAR must be a valid int, got: not-an-int",
+      "repair": {
+        "id": "fix-invalid-type",
+        "variable": "INT_VAR",
+        "type": "int",
+        "example": "5",
+        "constraint": null
+      }
+    },
+    {
+      "code": "CFG002",
+      "severity": "error",
+      "variable": "EMAIL_VAR",
+      "value": "not-an-email",
+      "message": "EMAIL_VAR must be a valid email, got: not-an-email",
+      "repair": {
+        "id": "fix-invalid-type",
+        "variable": "EMAIL_VAR",
+        "type": "email",
+        "example": "admin@example.com",
+        "constraint": null
+      }
+    },
+    {
+      "code": "CFG002",
+      "severity": "error",
+      "variable": "PATH_VAR",
+      "value": "",
+      "message": "PATH_VAR must be a valid path, got: ",
+      "repair": {
+        "id": "fix-invalid-type",
+        "variable": "PATH_VAR",
+        "type": "path",
+        "example": "/var/log/app",
+        "constraint": null
+      }
+    },
+    {
+      "code": "CFG002",
+      "severity": "error",
+      "variable": "DURATION_VAR",
+      "value": "not-a-duration",
+      "message": "DURATION_VAR must be a valid duration, got: not-a-duration",
+      "repair": {
+        "id": "fix-invalid-type",
+        "variable": "DURATION_VAR",
+        "type": "duration",
+        "example": "1h",
+        "constraint": null
+      }
+    },
+    {
+      "code": "CFG002",
+      "severity": "error",
+      "variable": "JSON_VAR",
+      "value": "{bad json}",
+      "message": "JSON_VAR must be a valid json, got: {bad json}",
+      "repair": {
+        "id": "fix-invalid-type",
+        "variable": "JSON_VAR",
+        "type": "json",
+        "example": "{\"enabled\": true, \"mode\": \"advanced\"}",
+        "constraint": null
+      }
+    }
+  ]
+}

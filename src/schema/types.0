@@ -1,0 +1,97 @@
+// src/schema/types.0 — All type declarations for zero-config
+
+pub choice ConfigType {
+  String      // Any UTF-8 string value. No format validation.
+  Url         // Valid URL. Schemes validated per §4.3.
+  Port        // Integer in range 1–65535 inclusive.
+  Bool        // Canonical values: "true","false","1","0","yes","no" (case-insensitive).
+  Int         // Parseable as i64. No range constraint at v1.
+  Secret      // String; value is redacted in all output. Format not validated.
+  Email       // Must contain exactly one @, non-empty local and domain parts.
+  Path        // Non-empty string. Existence NOT checked unless --check-paths flag set.
+  Duration    // Pattern: /^\d+[smhd]$/ — e.g. "30s", "5m", "2h", "1d".
+  Json        // Must be parseable by std.json. Any valid JSON value.
+}
+
+pub shape ConfigVar {
+  name:        str            // Variable name. MUST match /^[A-Z][A-Z0-9_]*$/.
+  type:        ConfigType     // Expected type. MUST be a valid ConfigType member.
+  required:    bool           // If true, absence is an error. If false, absence is allowed.
+  description: str            // Human + agent readable. MUST NOT be empty.
+  example:     str            // A valid example value. Used in generate output.
+  default:     str?           // Default used in generate output. nil if no default.
+  deprecated:  bool           // If true, presence produces a CFG004 warning.
+  tags:        [str]          // Optional labels for grouping. e.g. ["database", "required"]
+}
+
+pub shape AppConfig {
+  name:        str        // Project or application name. Used in output headers.
+  version:     str        // Schema version. Semver string. e.g. "1.0.0".
+  variables:   [ConfigVar]
+}
+
+pub choice Severity {
+  Error
+  Warning
+}
+
+pub shape RepairHint {
+  id:         str    // Action identifier. Stable across versions. See §4.7.
+  variable:   str    // The variable name to act on.
+  type:       str    // The expected ConfigType as a lowercase string.
+  example:    str?   // A valid example value, if available from the schema.
+  constraint: str?   // Human-readable constraint description. e.g. "1 ≤ value ≤ 65535"
+}
+
+pub shape ValidationError {
+  code:      str           // Error code from catalogue (§8). e.g. "CFG001".
+  severity:  Severity      // error | warning
+  variable:  str           // The variable name this error concerns.
+  value:     str?          // The actual value found, if one exists. nil for missing vars.
+  message:   str           // Human-readable explanation.
+  repair:    RepairHint    // Machine-readable fix suggestion.
+}
+
+pub shape CheckSummary {
+  total:    i32   // Total variables in schema
+  valid:    i32   // Variables that passed validation
+  errors:   i32   // Errors (severity: Error)
+  warnings: i32   // Warnings (severity: Warning)
+}
+
+pub shape CheckResult {
+  ok:          bool
+  timestamp:   str           // ISO 8601 UTC. e.g. "2026-05-22T14:30:00Z"
+  schema_name: str
+  version:     str
+  summary:     CheckSummary
+  diagnostics: [ValidationError]
+}
+
+pub shape SchemaInfo {
+  name:      str
+  version:   str
+  variables: [ConfigVar]
+}
+
+pub shape InspectResult {
+  skill:     str          // Always "config"
+  version:   str          // zero-config package version
+  schema:    SchemaInfo
+}
+
+pub shape DiffMismatch {
+  variable:    str
+  left_value:  str?
+  right_value: str?
+  type:        str
+}
+
+pub shape DiffResult {
+  ok:        bool
+  left:      str           // Label for left environment (filename or "env")
+  right:     str           // Label for right environment
+  missing_in_left:  [str]  // Variable names present in schema, missing in left
+  missing_in_right: [str]  // Variable names present in schema, missing in right
+  type_mismatches:  [DiffMismatch]
+}

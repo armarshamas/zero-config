@@ -1,0 +1,40 @@
+{
+  "skill": "config",
+  "version": "1.0.0",
+  "schema": {
+    "name": "basic-test",
+    "version": "1.0.0",
+    "variables": [
+      {
+        "name": "DATABASE_URL",
+        "type": "url",
+        "required": true,
+        "description": "PostgreSQL connection string",
+        "example": "postgres://localhost:5432/db",
+        "default": null,
+        "deprecated": false,
+        "tags": ["db"]
+      },
+      {
+        "name": "PORT",
+        "type": "port",
+        "required": false,
+        "description": "Server port",
+        "example": "3000",
+        "default": "3000",
+        "deprecated": false,
+        "tags": []
+      },
+      {
+        "name": "DEBUG",
+        "type": "bool",
+        "required": false,
+        "description": "Enable debug mode",
+        "example": "false",
+        "default": "false",
+        "deprecated": false,
+        "tags": []
+      }
+    ]
+  }
+}

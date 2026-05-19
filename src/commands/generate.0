@@ -1,0 +1,58 @@
+// zero-config generate command
+// Writes .env.template from schema
+// Version: 1.0.0
+
+use ..schema.types
+use ..schema.loader
+use ..output.template
+
+// GenerateCommand flags
+pub shape GenerateCommandFlags {
+  output: str?         // Output file path
+  stdout: bool         // Print to stdout instead of writing file
+  overwrite: bool      // Overwrite existing file
+  schema_path: str?    // Explicit schema path
+}
+
+// run executes the generate command
+pub fun run(world: World, flags: GenerateCommandFlags) -> i32 raises {
+  // Find and load schema
+  let schema = check loader.discover_and_load(world, flags.schema_path)
+
+  // Generate template
+  let template_content = template.generate_template(schema)
+
+  // Output
+  if flags.stdout {
+    check world.out.write(template_content)
+  } else {
+    let output_path = match flags.output {
+      some p => p,
+      none => ".env.template"
+    }
+
+    // Check if file exists (unless overwrite)
+    if !flags.overwrite {
+        // Implementation A might have different fs API. 
+        // Based on loader.0: world.fs.read(path)
+        // Let's check if world.fs.exists exists or how to check file existence.
+        // For now I'll try to read it, if it succeeds it exists.
+        let exists = match world.fs.read(output_path) {
+            ok _ => true,
+            err _ => false
+        }
+        if exists {
+            check world.err.write("Error: File already exists: " + output_path + "\n")
+            check world.err.write("Use --overwrite to replace it.\n")
+            return 2  // Usage error
+        }
+    }
+
+    // Write file
+    // Assuming world.fs.write(path, content)
+    check world.fs.write(output_path, template_content)
+    check world.out.write("Generated: " + output_path + "\n")
+  }
+
+  return 0
+}

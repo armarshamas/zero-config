@@ -1,0 +1,42 @@
+{
+  "ok": false,
+  "timestamp": "2026-05-22T14:30:00Z",
+  "schema_name": "full-test-app",
+  "version": "1.0.0",
+  "summary": {
+    "total": 10,
+    "valid": 8,
+    "errors": 2,
+    "warnings": 0
+  },
+  "diagnostics": [
+    {
+      "code": "CFG001",
+      "severity": "error",
+      "variable": "URL_VAR",
+      "value": null,
+      "message": "URL_VAR is required but not set",
+      "repair": {
+        "id": "set-missing-required",
+        "variable": "URL_VAR",
+        "type": "url",
+        "example": "https://api.example.com",
+        "constraint": null
+      }
+    },
+    {
+      "code": "CFG001",
+      "severity": "error",
+      "variable": "BOOL_VAR",
+      "value": null,
+      "message": "BOOL_VAR is required but not set",
+      "repair": {
+        "id": "set-missing-required",
+        "variable": "BOOL_VAR",
+        "type": "bool",
+        "example": "true",
+        "constraint": null
+      }
+    }
+  ]
+}

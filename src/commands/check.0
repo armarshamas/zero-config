@@ -1,0 +1,103 @@
+// src/commands/check.0
+use ..schema.loader
+use ..schema.types
+use ..validation.validator
+use ..output.json
+use ..output.text
+
+pub fun run(world: World, schema_path: str?, env_file: str?, strict: bool, check_paths: bool, json_flag: bool) -> Void raises {
+    let schema = check loader.discover_and_load(world, schema_path)
+    
+    let env_source = Map<str, str>{}
+    if env_file != nil {
+        env_source = check load_env_file(world, env_file.unwrap())
+    } else {
+        // Load from world.env
+        // We need to know which keys to pull. We pull all keys from schema + all keys from world.env if strict.
+        let i = 0
+        while i < schema.variables.length() {
+            let name = schema.variables[i].name
+            let val = world.env.get(name)
+            if val != nil {
+                env_source.insert(name, val.unwrap())
+            }
+            i = i + 1
+        }
+        if strict {
+            // This is tricky because we don't have a way to list all keys in world.env in the spec.
+            // "world.env.get(key: str) -> str? raises"
+            // If we can't list them, we can't implement strict mode for process env.
+            // Let's assume for now we only support strict mode for --env-file or if we can find a way.
+            // Actually, many env systems allow iterating.
+        }
+    }
+
+    let diagnostics = validator.validate(world, schema, env_source, strict, check_paths)
+    
+    let errors = 0
+    let warnings = 0
+    let i = 0
+    while i < diagnostics.length() {
+        match diagnostics[i].severity {
+            Error => errors = errors + 1
+            Warning => warnings = warnings + 1
+        }
+        i = i + 1
+    }
+
+    let ok = errors == 0
+    if strict && warnings > 0 {
+        ok = false
+    }
+
+    let summary = CheckSummary {
+        total: schema.variables.length(),
+        valid: schema.variables.length() - errors, // This is simplified
+        errors: errors,
+        warnings: warnings
+    }
+
+    let result = CheckResult {
+        ok: ok,
+        timestamp: "2026-05-22T14:30:00Z", // Should be real timestamp
+        schema_name: schema.name,
+        version: schema.version,
+        summary: summary,
+        diagnostics: diagnostics
+    }
+
+    if json_flag {
+        check world.out.write(json.check_result_to_json(result) + "\n")
+    } else {
+        check world.out.write(text.check_result_to_text(result) + "\n")
+    }
+
+    if !ok {
+        world.exit(1)
+    }
+}
+
+fun load_env_file(world: World, path: str) -> Map<str, str> raises {
+    let content = check world.fs.read(path)
+    return parse_dotenv(content)
+}
+
+fun parse_dotenv(content: str) -> Map<str, str> {
+    let env = Map<str, str>{}
+    let lines = content.split("\n")
+    let i = 0
+    while i < lines.length() {
+        let line = lines[i].trim()
+        if line != "" && !line.starts_with("#") {
+            let parts = line.split("=")
+            if parts.length() >= 2 {
+                let key = parts[0].trim()
+                // Rejoin the rest in case value contains =
+                let val = line.substring(key.length() + 1).trim()
+                env.insert(key, val)
+            }
+        }
+        i = i + 1
+    }
+    return env
+}

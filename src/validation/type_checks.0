@@ -1,0 +1,108 @@
+// src/validation/type_checks.0
+use std.json
+use ..schema.types
+
+pub fun is_valid_url(value: str) -> bool {
+    if value == "" {
+        return false
+    }
+    let lower = value.to_lowercase()
+    let schemes = [
+        "http://", "https://",
+        "postgres://", "postgresql://",
+        "mysql://", "mariadb://",
+        "redis://", "rediss://",
+        "mongodb://", "mongodb+srv://",
+        "amqp://", "amqps://",
+        "smtp://", "smtps://",
+        "ftp://", "ftps://",
+        "s3://"
+    ]
+    
+    let i = 0
+    let found = false
+    while i < 17 {
+        if lower.starts_with(schemes[i]) {
+            if lower.length() > schemes[i].length() {
+                found = true
+                break
+            }
+        }
+        i = i + 1
+    }
+    return found
+}
+
+pub fun is_valid_port(value: str) -> bool {
+    let port_opt = value.to_int()
+    match port_opt {
+        some p => {
+            return p >= 1 && p <= 65535
+        }
+        none => return false
+    }
+}
+
+pub fun is_valid_bool(value: str) -> bool {
+    let lower = value.to_lowercase()
+    return lower == "true" || lower == "false" || 
+           lower == "1" || lower == "0" || 
+           lower == "yes" || lower == "no"
+}
+
+pub fun is_valid_int(value: str) -> bool {
+    // Specification says i64, but Zero might have to_int for i32/i64.
+    // Let's assume to_int works for valid integers.
+    let val_opt = value.to_int()
+    match val_opt {
+        some _ => return true
+        none => return false
+    }
+}
+
+pub fun is_valid_email(value: str) -> bool {
+    if value == "" {
+        return false
+    }
+    // Must contain exactly one @, non-empty local and domain parts.
+    let parts = value.split("@")
+    if parts.length() != 2 {
+        return false
+    }
+    return parts[0] != "" && parts[1] != ""
+}
+
+pub fun is_valid_path(value: str) -> bool {
+    return value != ""
+}
+
+pub fun is_valid_duration(value: str) -> bool {
+    if value == "" {
+        return false
+    }
+    // Pattern: /^\d+[smhd]$/
+    let len = value.length()
+    if len < 2 {
+        return false
+    }
+    let last = value.substring(len - 1)
+    if last != "s" && last != "m" && last != "h" && last != "d" {
+        return false
+    }
+    let num_part = value.substring(0, len - 1)
+    let num_opt = num_part.to_int()
+    match num_opt {
+        some n => return n >= 0
+        none => return false
+    }
+}
+
+pub fun is_valid_json(value: str) -> bool {
+    if value == "" {
+        return false
+    }
+    match json.decode(value) {
+        ok _ => return true
+        err _ => return false
+    }
+}

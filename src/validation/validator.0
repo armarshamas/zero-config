@@ -1,0 +1,165 @@
+// src/validation/validator.0
+use ..schema.types
+use .type_checks
+use .error_codes
+
+pub fun validate(world: World, schema: AppConfig, env_source: Map<str, str>, strict: bool, check_paths: bool) -> [ValidationError] {
+    let diagnostics = []
+    
+    // Check all variables in schema
+    let i = 0
+    while i < schema.variables.length() {
+        let v = schema.variables[i]
+        let val_opt = env_source.get(v.name)
+        
+        match val_opt {
+            none => {
+                if v.required {
+                    diagnostics.push(ValidationError {
+                        code: error_codes.CFG001,
+                        severity: Severity.Error,
+                        variable: v.name,
+                        value: nil,
+                        message: v.name + " is required but not set",
+                        repair: RepairHint {
+                            id: "set-missing-required",
+                            variable: v.name,
+                            type: type_to_string(v.type),
+                            example: v.example,
+                            constraint: get_constraint(v.type)
+                        }
+                    })
+                }
+            }
+            some val => {
+                // If it's deprecated, add a warning
+                if v.deprecated {
+                    diagnostics.push(ValidationError {
+                        code: error_codes.CFG004,
+                        severity: Severity.Warning,
+                        variable: v.name,
+                        value: redact_if_needed(v.type, val),
+                        message: v.name + " is deprecated and should be removed",
+                        repair: RepairHint {
+                            id: "remove-deprecated",
+                            variable: v.name,
+                            type: type_to_string(v.type),
+                            example: nil,
+                            constraint: nil
+                        }
+                    })
+                }
+
+                // Type check
+                let is_valid = true
+                match v.type {
+                    String => is_valid = true
+                    Secret => is_valid = true
+                    Url => is_valid = type_checks.is_valid_url(val)
+                    Port => is_valid = type_checks.is_valid_port(val)
+                    Bool => is_valid = type_checks.is_valid_bool(val)
+                    Int => is_valid = type_checks.is_valid_int(val)
+                    Email => is_valid = type_checks.is_valid_email(val)
+                    Path => is_valid = type_checks.is_valid_path(val)
+                    Duration => is_valid = type_checks.is_valid_duration(val)
+                    Json => is_valid = type_checks.is_valid_json(val)
+                }
+
+                if !is_valid {
+                    diagnostics.push(ValidationError {
+                        code: error_codes.CFG002,
+                        severity: Severity.Error,
+                        variable: v.name,
+                        value: redact_if_needed(v.type, val),
+                        message: v.name + " must be a valid " + type_to_string(v.type) + ", got: " + redact_if_needed(v.type, val),
+                        repair: RepairHint {
+                            id: "fix-invalid-type",
+                            variable: v.name,
+                            type: type_to_string(v.type),
+                            example: v.example,
+                            constraint: get_constraint(v.type)
+                        }
+                    })
+                }
+            }
+        }
+        i = i + 1
+    }
+
+    if strict {
+        // Check for unknown variables
+        let keys = env_source.keys()
+        let j = 0
+        while j < keys.length() {
+            let key = keys[j]
+            let found = false
+            let k = 0
+            while k < schema.variables.length() {
+                if schema.variables[k].name == key {
+                    found = true
+                    break
+                }
+                k = k + 1
+            }
+            if !found {
+                diagnostics.push(ValidationError {
+                    code: error_codes.CFG005,
+                    severity: Severity.Warning,
+                    variable: key,
+                    value: key_val_redacted(key, env_source.get(key).unwrap()),
+                    message: key + " is set but not declared in the schema",
+                    repair: RepairHint {
+                        id: "fix-unknown-variable",
+                        variable: key,
+                        type: "unknown",
+                        example: nil,
+                        constraint: nil
+                    }
+                })
+            }
+            j = j + 1
+        }
+    }
+
+    return diagnostics
+}
+
+fun type_to_string(t: ConfigType) -> str {
+    match t {
+        String => return "string"
+        Url => return "url"
+        Port => return "port"
+        Bool => return "bool"
+        Int => return "int"
+        Secret => return "secret"
+        Email => return "email"
+        Path => return "path"
+        Duration => return "duration"
+        Json => return "json"
+    }
+}
+
+fun get_constraint(t: ConfigType) -> str? {
+    match t {
+        Port => return "1 ≤ value ≤ 65535"
+        Duration => return "Pattern: /^\d+[smhd]$/"
+        _ => return nil
+    }
+}
+
+fun redact_if_needed(t: ConfigType, val: str) -> str {
+    match t {
+        Secret => return "[REDACTED]"
+        _ => return val
+    }
+}
+
+fun key_val_redacted(key: str, val: str) -> str {
+    // For unknown vars in strict mode, we don't know if they are secrets.
+    // Spec §6.3 shows "VITE_DEBUG_MODE" with value "true" not redacted.
+    // ADR-003 says "Any variable with type Secret has its value replaced..."
+    // Since we don't know the type of an unknown variable, we don't redact it unless it looks like a secret?
+    // Actually, usually we don't redact unknown ones unless they match some pattern.
+    // Spec §6.3 shows: "value": "true" for CFG005.
+    return val
+}

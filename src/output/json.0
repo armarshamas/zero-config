@@ -1,0 +1,208 @@
+use std.json
+use ..schema.types
+
+// Internal shapes for JSON serialization that match the specification's output contracts.
+// These are used to ensure correct field names and types (like lowercase strings for ConfigType).
+
+shape ConfigVarJson {
+  name:        str
+  type:        str
+  required:    bool
+  description: str
+  example:     str
+  default:     str?
+  deprecated:  bool
+  tags:        [str]
+}
+
+shape SchemaInfoJson {
+  name:      str
+  version:   str
+  variables: [ConfigVarJson]
+}
+
+shape InspectResultJson {
+  skill:     str
+  version:   str
+  schema:    SchemaInfoJson
+}
+
+shape ErrorDetailJson {
+  code: str
+  message: str
+  hint: str
+}
+
+shape ErrorResponseJson {
+  ok: bool
+  error: ErrorDetailJson
+}
+
+pub fun config_type_to_str(t: ConfigType) -> str {
+  match t {
+    ConfigType.String => "string"
+    ConfigType.Url => "url"
+    ConfigType.Port => "port"
+    ConfigType.Bool => "bool"
+    ConfigType.Int => "int"
+    ConfigType.Secret => "secret"
+    ConfigType.Email => "email"
+    ConfigType.Path => "path"
+    ConfigType.Duration => "duration"
+    ConfigType.Json => "json"
+  }
+}
+
+pub fun inspect_result_to_json(result: InspectResult) -> str {
+  let json_vars = []
+  for var in result.schema.variables {
+    json_vars.push(ConfigVarJson {
+      name: var.name,
+      type: config_type_to_str(var.type),
+      required: var.required,
+      description: var.description,
+      example: var.example,
+      default: var.default,
+      deprecated: var.deprecated,
+      tags: var.tags,
+    })
+  }
+
+  let json_result = InspectResultJson {
+    skill: result.skill,
+    version: result.version,
+    schema: SchemaInfoJson {
+      name: result.schema.name,
+      version: result.schema.version,
+      variables: json_vars,
+    },
+  }
+
+  return json.encode(json_result)
+}
+
+shape RepairHintJson {
+  id:         str
+  variable:   str
+  type:       str
+  example:    str?
+  constraint: str?
+}
+
+shape ValidationErrorJson {
+  code:      str
+  severity:  str
+  variable:  str
+  value:     str?
+  message:   str
+  repair:    RepairHintJson
+}
+
+shape CheckSummaryJson {
+  total:    i32
+  valid:    i32
+  errors:   i32
+  warnings: i32
+}
+
+shape CheckResultJson {
+  ok:          bool
+  timestamp:   str
+  schema_name: str
+  version:     str
+  summary:     CheckSummaryJson
+  diagnostics: [ValidationErrorJson]
+}
+
+pub fun check_result_to_json(result: CheckResult) -> str {
+  let diagnostics_json = []
+  let i = 0
+  while i < result.diagnostics.length() {
+    let d = result.diagnostics[i]
+    diagnostics_json.push(ValidationErrorJson {
+      code: d.code,
+      severity: match d.severity {
+        Severity.Error => "error"
+        Severity.Warning => "warning"
+      },
+      variable: d.variable,
+      value: d.value,
+      message: d.message,
+      repair: RepairHintJson {
+        id: d.repair.id,
+        variable: d.repair.variable,
+        type: d.repair.type,
+        example: d.repair.example,
+        constraint: d.repair.constraint
+      }
+    })
+    i = i + 1
+  }
+
+  let json_result = CheckResultJson {
+    ok: result.ok,
+    timestamp: result.timestamp,
+    schema_name: result.schema_name,
+    version: result.version,
+    summary: CheckSummaryJson {
+      total: result.summary.total,
+      valid: result.summary.valid,
+      errors: result.summary.errors,
+      warnings: result.summary.warnings
+    },
+    diagnostics: diagnostics_json
+  }
+
+  return json.encode(json_result)
+}
+
+pub fun error_to_json(code: str, message: str, hint: str) -> str {
+  let resp = ErrorResponseJson {
+    ok: false,
+    error: ErrorDetailJson {
+      code: code,
+      message: message,
+      hint: hint,
+    },
+  }
+  return json.encode(resp)
+}
+
+shape DiffMismatchJson {
+  variable:    str
+  left_value:  str?
+  right_value: str?
+  type:        str
+}
+
+shape DiffResultJson {
+  ok:        bool
+  left:      str
+  right:     str
+  missing_in_left:  [str]
+  missing_in_right: [str]
+  type_mismatches:  [DiffMismatchJson]
+}
+
+pub fun diff_result_to_json(result: DiffResult) -> str {
+  let mismatches_json = []
+  for m in result.type_mismatches {
+    mismatches_json.push(DiffMismatchJson {
+      variable: m.variable,
+      left_value: m.left_value,
+      right_value: m.right_value,
+      type: m.type
+    })
+  }
+
+  let json_result = DiffResultJson {
+    ok: result.ok,
+    left: result.left,
+    right: result.right,
+    missing_in_left: result.missing_in_left,
+    missing_in_right: result.missing_in_right,
+    type_mismatches: mismatches_json
+  }
+
+  return json.encode(json_result)
+}

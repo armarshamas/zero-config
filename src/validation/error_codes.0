@@ -1,0 +1,13 @@
+// src/validation/error_codes.0
+
+pub let CFG000 = "CFG000" // No schema found
+pub let CFG001 = "CFG001" // Required variable absent
+pub let CFG002 = "CFG002" // Value fails type check
+pub let CFG003 = "CFG003" // Value fails format check
+pub let CFG004 = "CFG004" // Deprecated variable is set
+pub let CFG005 = "CFG005" // Unknown variable (strict)
+pub let CFG006 = "CFG006" // Schema parse error
+pub let CFG007 = "CFG007" // Duplicate variable name
+pub let CFG008 = "CFG008" // Invalid variable name
+pub let CFG009 = "CFG009" // Empty required field
+pub let CFG010 = "CFG010" // Both deprecated and required

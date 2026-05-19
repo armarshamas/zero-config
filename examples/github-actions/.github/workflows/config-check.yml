@@ -1,0 +1,17 @@
+name: Config validation
+
+on: [push, pull_request]
+
+jobs:
+  config-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install zero-config
+        run: npm install -g zero-config-cli
+      
+      - name: Validate configuration schema
+        run: zero-config check --json
+        env:
+          API_SECRET_KEY: ${{ secrets.API_SECRET_KEY }}

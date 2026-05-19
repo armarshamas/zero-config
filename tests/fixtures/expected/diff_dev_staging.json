@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "left": ".env.development",
+  "right": ".env.staging",
+  "missing_in_left": [],
+  "missing_in_right": ["REDIS_URL", "SMTP_HOST"],
+  "type_mismatches": [
+    {
+      "variable": "PORT",
+      "left_value": "3000",
+      "right_value": "not-a-port",
+      "type": "port"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+use ..schema.types
+use ..schema.loader
+use ..output.json
+
+pub fun run(world: World, schema_path: str?, json_flag: bool) -> Void raises {
+    let app_config = check loader.discover_and_load(world, schema_path)
+    
+    let inspect_result = InspectResult {
+        skill: "config",
+        version: "1.0.0",
+        schema: SchemaInfo {
+            name: app_config.name,
+            version: app_config.version,
+            variables: app_config.variables,
+        },
+    }
+
+    if json_flag {
+        let json_str = json.inspect_result_to_json(inspect_result)
+        check world.out.write(json_str + "\n")
+    } else {
+        check world.out.write("zero-config schema — " + app_config.name + " v" + app_config.version + "\n")
+        check world.out.write(app_config.variables.length().to_string() + " variables declared\n\n")
+
+        let reqs = []
+        let opts = []
+        let deps = []
+
+        let i = 0
+        while i < app_config.variables.length() {
+            let v = app_config.variables[i]
+            if v.deprecated {
+                deps.push(v)
+            } else if v.required {
+                reqs.push(v)
+            } else {
+                opts.push(v)
+            }
+            i = i + 1
+        }
+
+        if reqs.length() > 0 {
+            check world.out.write("REQUIRED (" + reqs.length().to_string() + ")\n")
+            let j = 0
+            while j < reqs.length() {
+                let v = reqs[j]
+                check world.out.write("  " + v.name + "   " + json.config_type_to_str(v.type) + "   " + v.description + "\n")
+                j = j + 1
+            }
+            check world.out.write("\n")
+        }
+
+        if opts.length() > 0 {
+            check world.out.write("OPTIONAL (" + opts.length().to_string() + ")\n")
+            let j = 0
+            while j < opts.length() {
+                let v = opts[j]
+                let default_str = ""
+                if v.default != nil {
+                    default_str = " (default: " + v.default.unwrap() + ")"
+                }
+                check world.out.write("  " + v.name + "   " + json.config_type_to_str(v.type) + "   " + v.description + default_str + "\n")
+                j = j + 1
+            }
+            check world.out.write("\n")
+        }
+
+        if deps.length() > 0 {
+            check world.out.write("DEPRECATED (" + deps.length().to_string() + ")\n")
+            let j = 0
+            while j < deps.length() {
+                let v = deps[j]
+                check world.out.write("  " + v.name + "   " + v.description + "\n")
+                j = j + 1
+            }
+            check world.out.write("\n")
+        }
+    }
+}

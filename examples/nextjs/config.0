@@ -1,0 +1,78 @@
+use zero-config
+
+pub let schema = AppConfig {
+  name: "my-nextjs-app",
+  version: "1.0.0",
+  variables: [
+    ConfigVar {
+      name:        "DATABASE_URL",
+      type:        ConfigType.Url,
+      required:    true,
+      description: "PostgreSQL connection string. Used by Prisma and pg directly.",
+      example:     "postgres://postgres:password@localhost:5432/myapp_dev",
+      default:     nil,
+      deprecated:  false,
+      tags:        ["database"]
+    },
+    ConfigVar {
+      name:        "NEXTAUTH_SECRET",
+      type:        ConfigType.Secret,
+      required:    true,
+      description: "Secret used to sign NextAuth.js JWTs. Generate with: openssl rand -hex 32",
+      example:     "[run: openssl rand -hex 32]",
+      default:     nil,
+      deprecated:  false,
+      tags:        ["auth"]
+    },
+    ConfigVar {
+      name:        "NEXTAUTH_URL",
+      type:        ConfigType.Url,
+      required:    true,
+      description: "Canonical URL of the application. Used by NextAuth.js for redirects.",
+      example:     "http://localhost:3000",
+      default:     nil,
+      deprecated:  false,
+      tags:        ["auth"]
+    },
+    ConfigVar {
+      name:        "NEXT_PUBLIC_API_URL",
+      type:        ConfigType.Url,
+      required:    false,
+      description: "Public API base URL. Exposed to the browser. Must be HTTPS in production.",
+      example:     "https://api.myapp.com",
+      default:     "http://localhost:3000/api",
+      deprecated:  false,
+      tags:        ["public"]
+    },
+    ConfigVar {
+      name:        "REDIS_URL",
+      type:        ConfigType.Url,
+      required:    false,
+      description: "Redis URL for rate limiting and session caching. Uses in-memory store if absent.",
+      example:     "redis://localhost:6379",
+      default:     nil,
+      deprecated:  false,
+      tags:        ["cache"]
+    },
+    ConfigVar {
+      name:        "RESEND_API_KEY",
+      type:        ConfigType.Secret,
+      required:    false,
+      description: "Resend API key for transactional email. Email is disabled if absent.",
+      example:     "re_xxxxxxxxxxxxxxxxxxxx",
+      default:     nil,
+      deprecated:  false,
+      tags:        ["email"]
+    },
+    ConfigVar {
+      name:        "NODE_ENV",
+      type:        ConfigType.String,
+      required:    false,
+      description: "Node.js environment. Controls error verbosity and optimisation flags.",
+      example:     "production",
+      default:     "development",
+      deprecated:  false,
+      tags:        []
+    }
+  ]
+}

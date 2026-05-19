@@ -1,0 +1,18 @@
+use zero-config
+
+pub let schema = AppConfig {
+  name: "docker-app",
+  version: "1.0.0",
+  variables: [
+    ConfigVar {
+      name:        "PORT",
+      type:        ConfigType.Port,
+      required:    true,
+      description: "Port for the app to listen on.",
+      example:     "8080",
+      default:     nil,
+      deprecated:  false,
+      tags:        []
+    }
+  ]
+}

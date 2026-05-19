@@ -1,0 +1,65 @@
+{
+  "name": "config",
+  "version": "1.0.0",
+  "description": "Typed, validated, agent-readable environment configuration for Zero applications",
+  "author": "zero-config authors",
+  "repository": "https://github.com/zerolang/zero-config",
+  "license": "MIT",
+  "keywords": ["config", "env", "environment", "configuration", "validation"],
+  "capabilities": ["env"],
+  "zero_version": ">=0.1.2",
+  "exports": {
+    "load": {
+      "signature": "fun load(world: World, schema: AppConfig) -> AppConfig raises",
+      "description": "Load and validate the application configuration. Returns the validated config or raises on error.",
+      "effects": ["env.read"],
+      "example": "let config = check zero_config.load(world, my_schema)"
+    },
+    "run_check": {
+      "signature": "fun run_check(world: World, schema: AppConfig) -> CheckResult raises",
+      "description": "Validate the current environment against the schema. Returns CheckResult with all diagnostics.",
+      "effects": ["env.read"],
+      "example": "let result = check zero_config.run_check(world, my_schema)"
+    },
+    "inspect": {
+      "signature": "fun inspect(schema: AppConfig) -> InspectResult",
+      "description": "Return the schema as a structured InspectResult. No environment access.",
+      "effects": [],
+      "example": "let docs = zero_config.inspect(my_schema)"
+    },
+    "generate": {
+      "signature": "fun generate(schema: AppConfig) -> str",
+      "description": "Generate a .env template string from the schema.",
+      "effects": [],
+      "example": "let template = zero_config.generate(my_schema)"
+    }
+  },
+  "types": {
+    "ConfigType": {
+      "kind": "choice",
+      "values": ["String", "Url", "Port", "Bool", "Int", "Secret", "Email", "Path", "Duration", "Json"],
+      "description": "The set of recognized environment variable types"
+    },
+    "ConfigVar": {
+      "kind": "shape",
+      "fields": {
+        "name": { "type": "str", "description": "Variable name. Must match [A-Z][A-Z0-9_]*" },
+        "type": { "type": "ConfigType", "description": "Expected type" },
+        "required": { "type": "bool", "description": "Whether the variable must be set" },
+        "description": { "type": "str", "description": "Human and agent readable documentation" },
+        "example": { "type": "str", "description": "A valid example value" },
+        "default": { "type": "str?", "description": "Default value for generate output" },
+        "deprecated": { "type": "bool", "description": "Whether this variable is deprecated" },
+        "tags": { "type": "[str]", "description": "Optional grouping labels" }
+      }
+    },
+    "AppConfig": {
+      "kind": "shape",
+      "fields": {
+        "name": { "type": "str" },
+        "version": { "type": "str" },
+        "variables": { "type": "[ConfigVar]" }
+      }
+    }
+  }
+}

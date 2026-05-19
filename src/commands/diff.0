@@ -1,0 +1,204 @@
+// zero-config diff command
+// Compares two environment sources against the schema
+// Version: 1.0.0
+
+use ..schema.types
+use ..schema.loader
+use ..validation.type_checks
+use ..output.json
+
+// DiffCommand flags
+pub shape DiffCommandFlags {
+  json: bool           // JSON output mode
+  schema_path: str?    // Explicit schema path
+}
+
+// run executes the diff command
+pub fun run(world: World, left_path: str, right_path: str, flags: DiffCommandFlags) -> i32 raises {
+  // Find and load schema
+  let schema = check loader.discover_and_load(world, flags.schema_path)
+
+  // Load left environment
+  let left_map = check load_env_source(world, left_path, schema)
+
+  // Load right environment
+  let right_map = check load_env_source(world, right_path, schema)
+
+  // Compare
+  let missing_in_left = []
+  let missing_in_right = []
+  let type_mismatches = []
+
+  let i = 0
+  while i < schema.variables.length() {
+    let var = schema.variables[i]
+    let left_val_opt = left_map.get(var.name)
+    let right_val_opt = right_map.get(var.name)
+
+    if left_val_opt == nil {
+      missing_in_left.push(var.name)
+    }
+
+    if right_val_opt == nil {
+      missing_in_right.push(var.name)
+    }
+
+    if left_val_opt != nil && right_val_opt != nil {
+      let left_val = left_val_opt.unwrap()
+      let right_val = right_val_opt.unwrap()
+      
+      let left_valid = is_valid_for_type(left_val, var.type)
+      let right_valid = is_valid_for_type(right_val, var.type)
+
+      // If one is valid and the other is not, or if both are invalid, it's a mismatch
+      if left_valid != right_valid || (!left_valid && !right_valid) {
+        type_mismatches.push(DiffMismatch {
+          variable: var.name,
+          left_value: redact_if_needed(var.type, left_val),
+          right_value: redact_if_needed(var.type, right_val),
+          type: type_to_string(var.type)
+        })
+      }
+    }
+    i = i + 1
+  }
+
+  // Build result
+  let result = DiffResult {
+    ok: missing_in_left.length() == 0 &&
+        missing_in_right.length() == 0 &&
+        type_mismatches.length() == 0,
+    left: left_path,
+    right: right_path,
+    missing_in_left: missing_in_left,
+    missing_in_right: missing_in_right,
+    type_mismatches: type_mismatches
+  }
+
+  // Output result
+  if flags.json {
+    check world.out.write(json.diff_result_to_json(result) + "\n")
+  } else {
+    // Human-readable output
+    check world.out.write("Diffing " + left_path + " and " + right_path + " against schema " + schema.name + "\n")
+    if result.ok {
+      check world.out.write("✓ No differences found\n")
+    } else {
+      if missing_in_left.length() > 0 {
+        check world.out.write("\nMissing in " + left_path + ":\n")
+        let j = 0
+        while j < missing_in_left.length() {
+          check world.out.write("  - " + missing_in_left[j] + "\n")
+          j = j + 1
+        }
+      }
+      if missing_in_right.length() > 0 {
+        check world.out.write("\nMissing in " + right_path + ":\n")
+        let j = 0
+        while j < missing_in_right.length() {
+          check world.out.write("  - " + missing_in_right[j] + "\n")
+          j = j + 1
+        }
+      }
+      if type_mismatches.length() > 0 {
+        check world.out.write("\nType mismatches:\n")
+        let j = 0
+        while j < type_mismatches.length() {
+          let m = type_mismatches[j]
+          check world.out.write("  - " + m.variable + " (" + m.type + ")\n")
+          check world.out.write("    " + left_path + ": " + m.left_value.unwrap() + "\n")
+          check world.out.write("    " + right_path + ": " + m.right_value.unwrap() + "\n")
+          j = j + 1
+        }
+      }
+    }
+  }
+
+  // Exit code
+  if result.ok {
+    return 0
+  } else {
+    return 1
+  }
+}
+
+fun load_env_source(world: World, path: str, schema: AppConfig) -> Map<str, str> raises {
+  if path == "env" {
+    let env_source = Map<str, str>{}
+    let i = 0
+    while i < schema.variables.length() {
+      let name = schema.variables[i].name
+      let val = world.env.get(name)
+      if val != nil {
+        env_source.insert(name, val.unwrap())
+      }
+      i = i + 1
+    }
+    return env_source
+  } else {
+    let content = check world.fs.read(path)
+    return parse_dotenv(content)
+  }
+}
+
+fun parse_dotenv(content: str) -> Map<str, str> {
+  let env = Map<str, str>{}
+  let lines = content.split("\n")
+  let i = 0
+  while i < lines.length() {
+    let line = lines[i].trim()
+    if line != "" && !line.starts_with("#") {
+      let parts = line.split("=")
+      if parts.length() >= 2 {
+        let key = parts[0].trim()
+        let val = line.substring(key.length() + 1).trim()
+        // Basic quote stripping
+        if (val.starts_with("\"") && val.ends_with("\"")) || (val.starts_with("'") && val.ends_with("'")) {
+          if val.length() >= 2 {
+            val = val.substring(1, val.length() - 1)
+          }
+        }
+        env.insert(key, val)
+      }
+    }
+    i = i + 1
+  }
+  return env
+}
+
+fun is_valid_for_type(val: str, t: ConfigType) -> bool {
+  match t {
+    String => return true
+    Secret => return true
+    Url => return type_checks.is_valid_url(val)
+    Port => return type_checks.is_valid_port(val)
+    Bool => return type_checks.is_valid_bool(val)
+    Int => return type_checks.is_valid_int(val)
+    Email => return type_checks.is_valid_email(val)
+    Path => return type_checks.is_valid_path(val)
+    Duration => return type_checks.is_valid_duration(val)
+    Json => return type_checks.is_valid_json(val)
+  }
+}
+
+fun type_to_string(t: ConfigType) -> str {
+  match t {
+    String => return "string"
+    Url => return "url"
+    Port => return "port"
+    Bool => return "bool"
+    Int => return "int"
+    Secret => return "secret"
+    Email => return "email"
+    Path => return "path"
+    Duration => return "duration"
+    Json => return "json"
+  }
+}
+
+fun redact_if_needed(t: ConfigType, val: str) -> str {
+  match t {
+    Secret => return "[REDACTED]"
+    _ => return val
+  }
+}

@@ -1,0 +1,18 @@
+use zero-config
+
+pub let schema = AppConfig {
+  name: "github-actions-app",
+  version: "1.0.0",
+  variables: [
+    ConfigVar {
+      name:        "API_SECRET_KEY",
+      type:        ConfigType.Secret,
+      required:    true,
+      description: "Secret API key.",
+      example:     "secret-key",
+      default:     nil,
+      deprecated:  false,
+      tags:        []
+    }
+  ]
+}

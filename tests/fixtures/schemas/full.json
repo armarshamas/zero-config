@@ -1,0 +1,106 @@
+{
+  "name": "full-test-app",
+  "version": "1.0.0",
+  "variables": [
+    {
+      "name": "STR_VAR",
+      "type": "string",
+      "required": true,
+      "description": "General purpose string configuration",
+      "example": "hello",
+      "default": null,
+      "deprecated": false,
+      "tags": ["core"]
+    },
+    {
+      "name": "URL_VAR",
+      "type": "url",
+      "required": true,
+      "description": "External API service endpoint",
+      "example": "https://api.example.com",
+      "default": null,
+      "deprecated": false,
+      "tags": ["network"]
+    },
+    {
+      "name": "PORT_VAR",
+      "type": "port",
+      "required": true,
+      "description": "Internal server listening port",
+      "example": "3000",
+      "default": "3000",
+      "deprecated": false,
+      "tags": ["network"]
+    },
+    {
+      "name": "BOOL_VAR",
+      "type": "bool",
+      "required": true,
+      "description": "Feature flag toggle",
+      "example": "true",
+      "default": "false",
+      "deprecated": false,
+      "tags": ["feature"]
+    },
+    {
+      "name": "INT_VAR",
+      "type": "int",
+      "required": true,
+      "description": "Maximum retry attempts for failed operations",
+      "example": "5",
+      "default": null,
+      "deprecated": false,
+      "tags": ["core"]
+    },
+    {
+      "name": "SECRET_VAR",
+      "type": "secret",
+      "required": true,
+      "description": "Confidential API access token",
+      "example": "sk_live_123456789",
+      "default": null,
+      "deprecated": false,
+      "tags": ["security"]
+    },
+    {
+      "name": "EMAIL_VAR",
+      "type": "email",
+      "required": true,
+      "description": "Administrative contact email address",
+      "example": "admin@example.com",
+      "default": null,
+      "deprecated": false,
+      "tags": ["core"]
+    },
+    {
+      "name": "PATH_VAR",
+      "type": "path",
+      "required": true,
+      "description": "Local filesystem directory for log storage",
+      "example": "/var/log/app",
+      "default": null,
+      "deprecated": false,
+      "tags": ["core"]
+    },
+    {
+      "name": "DURATION_VAR",
+      "type": "duration",
+      "required": true,
+      "description": "Cache expiration timeout",
+      "example": "1h",
+      "default": null,
+      "deprecated": false,
+      "tags": ["cache"]
+    },
+    {
+      "name": "JSON_VAR",
+      "type": "json",
+      "required": true,
+      "description": "Structured configuration payload",
+      "example": "{\"enabled\": true, \"mode\": \"advanced\"}",
+      "default": null,
+      "deprecated": false,
+      "tags": ["core"]
+    }
+  ]
+}

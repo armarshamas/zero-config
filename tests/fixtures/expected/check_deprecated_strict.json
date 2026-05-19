@@ -1,0 +1,28 @@
+{
+  "ok": false,
+  "timestamp": "2026-05-22T14:30:00Z",
+  "schema_name": "deprecated-schema",
+  "version": "1.0.0",
+  "summary": {
+    "total": 1,
+    "valid": 1,
+    "errors": 0,
+    "warnings": 1
+  },
+  "diagnostics": [
+    {
+      "code": "CFG004",
+      "severity": "warning",
+      "variable": "LEGACY_VAR",
+      "value": "old_value",
+      "message": "LEGACY_VAR is deprecated and should be removed",
+      "repair": {
+        "id": "remove-deprecated",
+        "variable": "LEGACY_VAR",
+        "type": "string",
+        "example": null,
+        "constraint": null
+      }
+    }
+  ]
+}

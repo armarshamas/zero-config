@@ -1,0 +1,26 @@
+{
+  "name": "zero-config-cli",
+  "version": "1.0.0",
+  "description": "npm wrapper for the zero-config CLI tool",
+  "bin": {
+    "zero-config": "index.js"
+  },
+  "scripts": {
+    "install": "node install.js"
+  },
+  "author": "zero-config authors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zerolang/zero-config.git"
+  },
+  "keywords": [
+    "zero",
+    "config",
+    "environment",
+    "validation"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

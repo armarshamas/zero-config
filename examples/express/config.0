@@ -1,0 +1,18 @@
+use zero-config
+
+pub let schema = AppConfig {
+  name: "express-app",
+  version: "1.0.0",
+  variables: [
+    ConfigVar {
+      name:        "PORT",
+      type:        ConfigType.Port,
+      required:    false,
+      description: "Express server port.",
+      example:     "3000",
+      default:     "3000",
+      deprecated:  false,
+      tags:        []
+    }
+  ]
+}

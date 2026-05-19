@@ -1,0 +1,181 @@
+use .commands.inspect
+use .commands.check
+use .commands.generate
+use .commands.diff
+use .output.json
+
+pub fun main(world: World) -> Void raises {
+    let json_flag = false
+    let strict_flag = false
+    let check_paths_flag = false
+    let overwrite_flag = false
+    let stdout_flag = false
+    let schema_path: str? = nil
+    let env_file: str? = nil
+    let output_file: str? = nil
+    let command: str? = nil
+    let args: [str] = []
+    
+    // Check for version and help first as they take precedence
+    let i = 1
+    while true {
+        let arg = world.args.get(i)
+        if arg == nil {
+            break
+        }
+        if arg == "--version" {
+            check world.out.write("zero-config 1.0.0\n")
+            return
+        }
+        if arg == "--help" {
+            print_help(world)
+            return
+        }
+        i = i + 1
+    }
+
+    // Parse arguments properly
+    i = 1
+    while true {
+        let arg_opt = world.args.get(i)
+        if arg_opt == nil {
+            break
+        }
+        let arg = arg_opt
+
+        if arg == "--json" {
+            json_flag = true
+        } else if arg == "--strict" {
+            strict_flag = true
+        } else if arg == "--check-paths" {
+            check_paths_flag = true
+        } else if arg == "--overwrite" {
+            overwrite_flag = true
+        } else if arg == "--stdout" {
+            stdout_flag = true
+        } else if arg == "--schema" {
+            i = i + 1
+            let next_arg = world.args.get(i)
+            if next_arg == nil {
+                handle_error(world, "UsageError", "--schema requires a path", "Provide a path to your schema file", false)
+                world.exit(2)
+            }
+            schema_path = next_arg
+        } else if arg == "--env-file" {
+            i = i + 1
+            let next_arg = world.args.get(i)
+            if next_arg == nil {
+                handle_error(world, "UsageError", "--env-file requires a path", "Provide a path to your .env file", false)
+                world.exit(2)
+            }
+            env_file = next_arg
+        } else if arg == "--output" {
+            i = i + 1
+            let next_arg = world.args.get(i)
+            if next_arg == nil {
+                handle_error(world, "UsageError", "--output requires a path", "Provide a path for the output file", false)
+                world.exit(2)
+            }
+            output_file = next_arg
+        } else if arg.starts_with("-") {
+            handle_error(world, "UsageError", "Unknown argument: " + arg, "Check 'zero-config --help' for usage", json_flag)
+            world.exit(2)
+        } else if command == nil {
+            command = arg
+        } else {
+            args.push(arg)
+        }
+        i = i + 1
+    }
+
+    if command == nil {
+        handle_error(world, "UsageError", "No command provided", "Try 'zero-config inspect'", json_flag)
+        world.exit(2)
+    }
+
+    if command == "inspect" {
+        let res = inspect.run(world, schema_path, json_flag)
+        match res {
+            ok => {}
+            err msg => {
+                let code = "CFG000"
+                let display_msg = msg
+                if msg.starts_with("CFG006:") {
+                    code = "CFG006"
+                    display_msg = msg.substring(8)
+                } else if msg.starts_with("CFG000:") {
+                    code = "CFG000"
+                    display_msg = msg.substring(8)
+                }
+                handle_error(world, code, display_msg, "Ensure schema file exists and is valid", json_flag)
+                world.exit(3)
+            }
+        }
+    } else if command == "check" {
+        let res = check.run(world, schema_path, env_file, strict_flag, check_paths_flag, json_flag)
+        match res {
+            ok => {}
+            err msg => {
+                let code = "CFG000"
+                let display_msg = msg
+                if msg.starts_with("CFG006:") {
+                    code = "CFG006"
+                    display_msg = msg.substring(8)
+                } else if msg.starts_with("CFG000:") {
+                    code = "CFG000"
+                    display_msg = msg.substring(8)
+                }
+                handle_error(world, code, display_msg, "Validation failed to run", json_flag)
+                world.exit(3)
+            }
+        }
+    } else if command == "generate" {
+        let flags = generate.GenerateCommandFlags {
+            output: output_file,
+            stdout: stdout_flag,
+            overwrite: overwrite_flag,
+            schema_path: schema_path
+        }
+        let exit_code = check generate.run(world, flags)
+        world.exit(exit_code)
+    } else if command == "diff" {
+        if args.length() < 2 {
+            handle_error(world, "UsageError", "diff requires two sources", "Usage: zero-config diff <left> <right>", json_flag)
+            world.exit(2)
+        }
+        let flags = diff.DiffCommandFlags {
+            json: json_flag,
+            schema_path: schema_path
+        }
+        let exit_code = check diff.run(world, args[0], args[1], flags)
+        world.exit(exit_code)
+    } else {
+        handle_error(world, "UsageError", "Unknown command: " + command, "Available commands: inspect, check, generate, diff", json_flag)
+        world.exit(2)
+    }
+}
+
+fun handle_error(world: World, code: str, message: str, hint: str, json_flag: bool) -> Void raises {
+    if json_flag {
+        check world.out.write(json.error_to_json(code, message, hint) + "\n")
+    } else {
+        check world.err.write("Error [" + code + "]: " + message + "\nHint: " + hint + "\n")
+    }
+}
+
+fun print_help(world: World) -> Void raises {
+    check world.out.write("zero-config — typed environment configuration\n\n")
+    check world.out.write("Usage:\n")
+    check world.out.write("  zero-config [flags] <command>\n\n")
+    check world.out.write("Commands:\n")
+    check world.out.write("  check       Validate environment against schema\n")
+    check world.out.write("  inspect     Return full schema documentation\n")
+    check world.out.write("  generate    Generate .env.template from schema\n")
+    check world.out.write("  diff        Compare two environment sources\n\n")
+    check world.out.write("Flags:\n")
+    check world.out.write("  --json           Output in JSON format\n")
+    check world.out.write("  --schema <path>  Path to schema file\n")
+    check world.out.write("  --version        Show version\n")
+    check world.out.write("  --help           Show this help\n\n")
+    check world.out.write("Note: For the 'check' command, '--strict' mode currently only works with '--env-file' due to live process env limitations.\n")
+}

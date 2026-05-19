@@ -1,0 +1,16 @@
+{
+  "name": "deprecated-schema",
+  "version": "1.0.0",
+  "variables": [
+    {
+      "name": "LEGACY_VAR",
+      "type": "string",
+      "required": false,
+      "description": "A legacy variable",
+      "example": "old",
+      "default": null,
+      "deprecated": true,
+      "tags": []
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+use ..src.validation.type_checks
+
+pub fun test_is_valid_url() {
+  assert(type_checks.is_valid_url("https://example.com") == true)
+  assert(type_checks.is_valid_url("postgres://user:pass@localhost:5432/db") == true)
+  assert(type_checks.is_valid_url("ftp-invalid") == false)
+  assert(type_checks.is_valid_url("") == false)
+}
+
+pub fun test_is_valid_port() {
+  assert(type_checks.is_valid_port("3000") == true)
+  assert(type_checks.is_valid_port("0") == false)
+  assert(type_checks.is_valid_port("65536") == false)
+  assert(type_checks.is_valid_port("abc") == false)
+}
+
+pub fun test_is_valid_bool() {
+  assert(type_checks.is_valid_bool("true") == true)
+  assert(type_checks.is_valid_bool("FALSE") == true)
+  assert(type_checks.is_valid_bool("1") == true)
+  assert(type_checks.is_valid_bool("yes-no") == false)
+}
+
+pub fun test_is_valid_int() {
+  assert(type_checks.is_valid_int("0") == true)
+  assert(type_checks.is_valid_int("-1") == true)
+  assert(type_checks.is_valid_int("999999") == true)
+  assert(type_checks.is_valid_int("abc") == false)
+}
+
+pub fun test_is_valid_email() {
+  assert(type_checks.is_valid_email("user@example.com") == true)
+  assert(type_checks.is_valid_email("a@b.co") == true)
+  assert(type_checks.is_valid_email("user@") == false)
+  assert(type_checks.is_valid_email("@example.com") == false)
+}
+
+pub fun test_is_valid_path() {
+  assert(type_checks.is_valid_path("./config") == true)
+  assert(type_checks.is_valid_path("") == false)
+}
+
+pub fun test_is_valid_duration() {
+  assert(type_checks.is_valid_duration("30s") == true)
+  assert(type_checks.is_valid_duration("5m") == true)
+  assert(type_checks.is_valid_duration("100s") == true)
+  assert(type_checks.is_valid_duration("30") == false)
+}
+
+pub fun test_is_valid_json() {
+  assert(type_checks.is_valid_json("{}") == true)
+  assert(type_checks.is_valid_json("[]") == true)
+  assert(type_checks.is_valid_json("{bad json}") == false)
+  assert(type_checks.is_valid_json("") == false)
+}

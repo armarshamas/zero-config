@@ -1,0 +1,36 @@
+{
+  "name": "diff-test",
+  "version": "1.0.0",
+  "variables": [
+    {
+      "name": "PORT",
+      "type": "port",
+      "required": true,
+      "description": "Port",
+      "example": "3000",
+      "default": null,
+      "deprecated": false,
+      "tags": []
+    },
+    {
+      "name": "REDIS_URL",
+      "type": "url",
+      "required": false,
+      "description": "Redis",
+      "example": "redis://localhost",
+      "default": null,
+      "deprecated": false,
+      "tags": []
+    },
+    {
+      "name": "SMTP_HOST",
+      "type": "string",
+      "required": false,
+      "description": "SMTP",
+      "example": "localhost",
+      "default": null,
+      "deprecated": false,
+      "tags": []
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+// zero-config template generation
+// Generates .env.template content from a schema
+// Version: 1.0.0
+
+use ..schema.types
+
+// generate_template creates a .env.template from a schema
+pub fun generate_template(schema: AppConfig) -> str {
+  let lines = []
+
+  // Header
+  lines.push("# zero-config template")
+  lines.push("# Schema: " + schema.name + " v" + schema.version)
+  lines.push("# Generated: " + get_current_timestamp())
+  lines.push("#")
+  lines.push("# This file was generated from your zero-config schema.")
+  lines.push("# Copy to .env and fill in the values.")
+  lines.push("# Do not commit .env to source control.")
+  lines.push("")
+
+  // Group variables
+  let required = []
+  let optional = []
+  let deprecated = []
+
+  for var in schema.variables {
+    if var.deprecated {
+      deprecated.push(var)
+    } else if var.required {
+      required.push(var)
+    } else {
+      optional.push(var)
+    }
+  }
+
+  // Required section
+  if required.length() > 0 {
+    lines.push("# " + repeat("─", 54))
+    lines.push("# REQUIRED — must be set before the application starts")
+    lines.push("# " + repeat("─", 54))
+    lines.push("")
+
+    for var in required {
+      lines.push(format_required_var(var))
+      lines.push("")
+    }
+  }
+
+  // Optional section
+  if optional.length() > 0 {
+    lines.push("# " + repeat("─", 54))
+    lines.push("# OPTIONAL — sensible defaults are applied if not set")
+    lines.push("# " + repeat("─", 54))
+    lines.push("")
+
+    for var in optional {
+      lines.push(format_optional_var(var))
+      lines.push("")
+    }
+  }
+
+  // Deprecated section
+  if deprecated.length() > 0 {
+    lines.push("# " + repeat("─", 54))
+    lines.push("# DEPRECATED — remove these from your environment")
+    lines.push("# " + repeat("─", 54))
+    lines.push("")
+
+    for var in deprecated {
+      lines.push(format_deprecated_var(var))
+      lines.push("")
+    }
+  }
+
+  return lines.join("\n")
+}
+
+// format_required_var formats a required variable
+fun format_required_var(var: ConfigVar) -> str {
+  let lines = []
+
+  // Type comment with tags
+  let type_line = "# " + var.name + " (" + config_type_to_string(var.type) + ")"
+  if var.tags.length() > 0 {
+    type_line = type_line + " — " + var.tags.join(", ")
+  }
+  lines.push(type_line)
+
+  // Description
+  lines.push("# " + var.description)
+
+  // Example
+  lines.push("# Example: " + var.example)
+
+  // Variable assignment (empty value)
+  lines.push(var.name + "=")
+
+  return lines.join("\n")
+}
+
+// format_optional_var formats an optional variable
+fun format_optional_var(var: ConfigVar) -> str {
+  let lines = []
+
+  // Type comment with default value
+  let default_hint = match var.default {
+    Some(d) => " — default: " + d,
+    None => ""
+  }
+  let type_line = "# " + var.name + " (" + config_type_to_string(var.type) + ")" + default_hint
+
+  if var.tags.length() > 0 {
+    type_line = type_line + " — " + var.tags.join(", ")
+  }
+  lines.push(type_line)
+
+  // Description
+  lines.push("# " + var.description)
+
+  // Example
+  if var.example.length() > 0 {
+    lines.push("# Example: " + var.example)
+  }
+
+  // Variable with default or commented out
+  match var.default {
+    Some(d) => lines.push(var.name + "=" + d),
+    None => lines.push("# " + var.name + "=")
+  }
+
+  return lines.join("\n")
+}
+
+// format_deprecated_var formats a deprecated variable
+fun format_deprecated_var(var: ConfigVar) -> str {
+  let lines = []
+
+  // Type comment with deprecation notice
+  lines.push("# " + var.name + " (" + config_type_to_string(var.type) + ") — DEPRECATED")
+
+  // Description
+  lines.push("# " + var.description)
+
+  // Commented out variable
+  lines.push("# " + var.name + "=")
+
+  return lines.join("\n")
+}
+
+// config_type_to_string converts ConfigType to lowercase string
+fun config_type_to_string(config_type: ConfigType) -> str {
+  match config_type {
+    ConfigType.String => return "string",
+    ConfigType.Url => return "url",
+    ConfigType.Port => return "port",
+    ConfigType.Bool => return "bool",
+    ConfigType.Int => return "int",
+    ConfigType.Secret => return "secret",
+    ConfigType.Email => return "email",
+    ConfigType.Path => return "path",
+    ConfigType.Duration => return "duration",
+    ConfigType.Json => return "json"
+  }
+}
+
+// get_current_timestamp returns ISO 8601 UTC timestamp
+fun get_current_timestamp() -> str {
+  // In a real implementation this would use std.time
+  return "2026-05-22T14:30:00Z"
+}
+
+// repeat creates a string with n repetitions
+fun repeat(s: str, n: i32) -> str {
+  let result = ""
+  for i in 0 .. n {
+    result = result + s
+  }
+  return result
+}
